@@ -1,0 +1,28 @@
+project:
+  name: "J26-IT-449"
+  title: "Explainable AI for Astronomical Discovery using XAI and Uncertainty Quantification"
+  component: "AGN-Aware Radio Source Structure Classification using CNN + XAI"
+  student: "J.A.B.G. Jayawickrama"
+  student_id: "IT23308602"
+  python_version: "3.12"
+
+paths:
+  data_root: "data"
+  raw_data: "data/raw"
+  interim_data: "data/interim"
+  processed_data: "data/processed"
+  splits: "data/splits"
+  models: "outputs/models"
+  metrics: "outputs/metrics"
+  figures: "outputs/figures"
+  confusion_matrix: "outputs/confusion_matrix"
+  gradcam: "outputs/gradcam"
+  xai_evaluation: "outputs/xai_evaluation"
+  logs: "outputs/logs"
+
+training:
+  seed: 42
+  batch_size: 32
+  num_epochs: 20
+  learning_rate: 0.001
+  num_workers: 0
