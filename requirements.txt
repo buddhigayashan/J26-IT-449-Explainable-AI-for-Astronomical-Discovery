@@ -7,7 +7,14 @@ scikit-learn
 pyyaml
 tqdm
 pillow
+
 jupyter
 ipykernel
+
 torch
 torchvision
+
+opencv-python
+astropy
+grad-cam
+pytest
