@@ -41,6 +41,16 @@ python scripts/download_data.py
 
 The command writes actual validation statistics to `outputs/metrics/dataset_validation.json` and `outputs/metrics/class_distribution.csv`, and saves a real sample grid to `outputs/figures/mirabest_sample_grid.png`. It does not train a model or preprocess/augment images.
 
+## Phase 2: Preprocessing and Splitting
+
+Create normalized float tensors and reproducible stratified splits with:
+
+```text
+python -m src.data.split_dataset --config config.yaml
+```
+
+The current seed-42 split contains 554 training samples, 119 validation samples, and 119 test samples. Split indices and summaries are saved under `data/splits/`; the class-distribution figure is saved to `outputs/figures/split_class_distribution.png`. Images remain `150x150`, validation/test transforms are deterministic, and conservative rotations/flips are applied only through the training view. No CNN training is performed in Phase 2.
+
 ## Usage
 
 Create or activate a Python 3.12 environment, then install the pinned project dependencies with:
