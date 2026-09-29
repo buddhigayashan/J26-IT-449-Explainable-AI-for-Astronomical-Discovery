@@ -1,0 +1,42 @@
+{
+  "dataset": "MiraBest Zenodo v1 basic binary dataset",
+  "source": "https://github.com/as595/E2CNNRadGal/blob/main/MiraBest.py",
+  "total_samples": 792,
+  "valid_samples": 792,
+  "class_counts": {
+    "FR-I": 351,
+    "FR-II": 441
+  },
+  "class_balance_percentages": {
+    "FR-I": 44.318182,
+    "FR-II": 55.681818
+  },
+  "label_values": [
+    0,
+    1
+  ],
+  "label_mapping": {
+    "0": "FR-I",
+    "1": "FR-II"
+  },
+  "image_tensor_shape": [
+    1,
+    150,
+    150
+  ],
+  "image_dimensions": [
+    150,
+    150
+  ],
+  "dtype": [
+    "uint8"
+  ],
+  "minimum_pixel_value": 0.0,
+  "maximum_pixel_value": 255.0,
+  "nan_values": 0,
+  "inf_values": 0,
+  "unreadable_sample_count": 0,
+  "unreadable_sample_indices": [],
+  "invalid_labels": {},
+  "preprocessing_applied": false
+}

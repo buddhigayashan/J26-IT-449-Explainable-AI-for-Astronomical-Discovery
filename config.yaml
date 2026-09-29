@@ -9,6 +9,7 @@ project:
 paths:
   data_root: "data"
   raw_data: "data/raw"
+  mirabest_root: "data/raw/mirabest"
   interim_data: "data/interim"
   processed_data: "data/processed"
   splits: "data/splits"
@@ -19,6 +20,18 @@ paths:
   gradcam: "outputs/gradcam"
   xai_evaluation: "outputs/xai_evaluation"
   logs: "outputs/logs"
+
+dataset:
+  name: "MiraBest Zenodo v1 basic binary dataset"
+  task: "binary FR-I vs FR-II classification"
+  archive_filename: "batches.tar.gz"
+  archive_md5: "fa9d6ad8fdde95b0a19df11433e8bca3"
+  download_url: "http://www.jb.man.ac.uk/research/MiraBest/full_dataset/MiraBest_full_batches.tar.gz"
+  label_mapping:
+    0: "FR-I"
+    1: "FR-II"
+  include_uncertain: false
+  include_hybrid: false
 
 training:
   seed: 42
