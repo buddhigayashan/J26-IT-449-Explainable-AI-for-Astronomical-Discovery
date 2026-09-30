@@ -32,3 +32,6 @@ Thumbs.db
 
 .gradio/
 demo_samples/
+
+outputs/reproducibility_seed42_verify*/
+outputs/reproducibility_seed99_verify/

@@ -19,6 +19,7 @@ from src.data.split_dataset import build_preprocessed_splits
 from src.models.improved_cnn import ImprovedCNN
 from src.models.resnet_cnn import ResNetCNN
 from src.models.train import TrainingConfig, train_model
+from src.utils.seed import set_global_seed
 
 
 def main() -> int:
@@ -54,6 +55,8 @@ def main() -> int:
 	splits = build_preprocessed_splits(dataset, split_indices, preprocess_config)
 	training_config = config["training"]
 	model_config = config.get("models", {}).get(args.model, {})
+	seed = int(training_config["seed"])
+	set_global_seed(seed)
 	model = {
 		"improved": ImprovedCNN,
 		"resnet": ResNetCNN,
@@ -62,7 +65,7 @@ def main() -> int:
 		splits["train"],
 		splits["validation"],
 		config=TrainingConfig(
-			seed=int(training_config["seed"]),
+			seed=seed,
 			batch_size=int(training_config["batch_size"]),
 			learning_rate=float(model_config.get("learning_rate", training_config["learning_rate"])),
 			weight_decay=float(model_config.get("weight_decay", training_config.get("weight_decay", 0.0))),

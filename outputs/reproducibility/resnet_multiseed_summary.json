@@ -1,0 +1,19 @@
+{
+  "model": "resnet",
+  "seeds": [
+    42,
+    7,
+    99,
+    123,
+    2026
+  ],
+  "test_evaluation_performed": false,
+  "mean_validation_accuracy": 0.7966386554621849,
+  "std_validation_accuracy": 0.11865117710738012,
+  "mean_macro_f1": 0.7596832357378731,
+  "std_macro_f1": 0.18479818053335642,
+  "mean_balanced_accuracy": 0.7817324185248713,
+  "std_balanced_accuracy": 0.1373612481676155,
+  "mean_validation_loss": 0.4115895087979421,
+  "std_validation_loss": 0.1258037191396537
+}

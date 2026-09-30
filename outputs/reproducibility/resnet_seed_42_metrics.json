@@ -1,0 +1,11 @@
+{
+  "seed": 42,
+  "best_epoch": 21,
+  "best_validation_loss": 0.3130206683603655,
+  "validation_accuracy": 0.8823529411764706,
+  "macro_precision": 0.8846938775510205,
+  "macro_recall": 0.8772155517438536,
+  "macro_f1": 0.8799019607843137,
+  "balanced_accuracy": 0.8772155517438536,
+  "test_evaluation_performed": false
+}

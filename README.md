@@ -93,6 +93,16 @@ python scripts/train_model.py --model resnet --config config.yaml
 
 Model 3 writes only to `outputs/models/resnet_cnn_best.pth`, `outputs/metrics/resnet_training_history.csv`, `outputs/metrics/resnet_validation_metrics.json`, and `outputs/figures/resnet_training_curves.png`. The test split remains unevaluated.
 
+## ResNet Reproducibility
+
+Run the optional five-seed validation-stability experiment with the same saved split and ResNet hyperparameters:
+
+```text
+python scripts/run_multiseed_resnet.py --config config.yaml
+```
+
+The seeds are `42`, `7`, `99`, `123`, and `2026`. This experiment evaluates validation data only and writes isolated checkpoints under `outputs/models/reproducibility/`.
+
 ## Viva Demo
 
 The local Gradio prototype uses only the selected ResNet checkpoint and does not retrain the model. If Gradio is not installed, run:

@@ -116,6 +116,7 @@ def train_model(
 	model: nn.Module | None = None,
 	output_root: str | Path = "outputs",
 	artifact_prefix: str = "baseline",
+	artifact_paths: dict[str, str | Path] | None = None,
 ) -> dict[str, Any]:
 	"""Train a selected model using train/validation data only.
 
@@ -168,7 +169,13 @@ def train_model(
 	figures_dir = output_root / "figures"
 	for directory in (model_dir, metrics_dir, figures_dir):
 		directory.mkdir(parents=True, exist_ok=True)
-	paths = training_artifact_paths(output_root, artifact_prefix)
+	paths = (
+		{key: Path(value) for key, value in artifact_paths.items()}
+		if artifact_paths is not None
+		else training_artifact_paths(output_root, artifact_prefix)
+	)
+	for path in paths.values():
+		path.parent.mkdir(parents=True, exist_ok=True)
 	checkpoint_path = paths["checkpoint"]
 	history_path = paths["history"]
 	curves_path = paths["curves"]
