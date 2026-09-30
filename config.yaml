@@ -23,15 +23,16 @@ paths:
 
 dataset:
   name: "MiraBest Zenodo v1 basic binary dataset"
+  source_record: "https://zenodo.org/records/4288837"
+  source_type: "official Zenodo v1 archive"
   task: "binary FR-I vs FR-II classification"
   archive_filename: "batches.tar.gz"
   archive_md5: "fa9d6ad8fdde95b0a19df11433e8bca3"
-  download_url: "http://www.jb.man.ac.uk/research/MiraBest/full_dataset/MiraBest_full_batches.tar.gz"
+  download_url: "https://zenodo.org/records/4288837/files/batches.tar.gz?download=1"
+  verified_payload_samples: 792
   label_mapping:
     0: "FR-I"
     1: "FR-II"
-  include_uncertain: false
-  include_hybrid: false
 
 preprocessing:
   normalize_mean: 0.5
@@ -52,3 +53,5 @@ training:
   num_epochs: 20
   learning_rate: 0.001
   num_workers: 0
+  early_stopping_patience: 5
+  device: "cpu"

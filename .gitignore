@@ -28,3 +28,4 @@ outputs/models/
 Thumbs.db
 # VS Code local settings
 .vscode/
+.kilo/

@@ -24,16 +24,18 @@ Student ID: IT23308602
 
 ## Dataset
 
-Phase 1 uses the **MiraBest Zenodo v1 basic binary dataset** for the binary task. The validated archive contains 704 training samples and 88 test samples, for 792 total samples:
+Phase 1 uses the **MiraBest Zenodo v1 basic binary dataset** from the official [Zenodo record 10.5281/zenodo.4288837](https://zenodo.org/records/4288837). The checksum-verified local archive contains 704 training samples and 88 test samples, for 792 total images:
 
 - label `0`: FR-I
 - label `1`: FR-II
 - FR-I samples: 351
 - FR-II samples: 441
 
-This Zenodo v1 archive is already a two-class FRI/FRII dataset. It must not be confused with the later full MiraBest archive, whose internal fine labels support the separate `MBFRConfident` definition of 833 confident samples. That later definition is not being used in Phase 1.
+This Zenodo v1 archive is already a two-class FRI/FRII dataset. The Zenodo metadata page describes a 1256-image dataset, but direct auditing of the checksum-verified downloadable archive found only 792 raw images. This documented metadata/payload discrepancy is preserved rather than hidden. All experimental results in this implementation use the actually verified 792-image payload.
 
-The official Zenodo v1 archive is expected at `data/raw/mirabest/batches.tar.gz` and is verified with MD5 `fa9d6ad8fdde95b0a19df11433e8bca3`. The loader preserves this archive and extracts the `batches/` directory only when it is not already present. Inspect and validate it with:
+This payload must not be confused with the later full MiraBest fine-label archive and its separate `MBFRConfident` definition of 833 confident samples. The later definition is not used here.
+
+The official archive is expected at `data/raw/mirabest/batches.tar.gz` and is verified with MD5 `fa9d6ad8fdde95b0a19df11433e8bca3`. The loader preserves this archive and extracts the `batches/` directory only when it is not already present. Inspect and validate it with:
 
 ```text
 python scripts/download_data.py
@@ -59,4 +61,14 @@ Create or activate a Python 3.12 environment, then install the pinned project de
 pip install -r requirements.txt
 ```
 
-Model implementation will be added after dataset validation and inspection are complete.
+Further model architectures will be considered only after the baseline evaluation is complete.
+
+## Phase 3: Baseline CNN
+
+Start baseline training with:
+
+```text
+python scripts/train_model.py --config config.yaml
+```
+
+The pipeline uses the existing seed-42 train/validation split, CrossEntropyLoss, Adam, train-only augmentation, and early stopping on validation loss. It saves only the best checkpoint to `outputs/models/baseline_cnn_best.pth`, along with training history, curves, and validation metrics under `outputs/metrics/` and `outputs/figures/`. The test split is intentionally not evaluated in Phase 3.
