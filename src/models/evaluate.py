@@ -24,9 +24,8 @@ from torch.utils.data import DataLoader, Dataset
 
 LABELS = (0, 1)
 CLASS_NAMES = ("FRI", "FRII")
-METRIC_KEYS = {
+COMMON_METRIC_KEYS = {
 	"num_validation_samples",
-	"validation_loss",
 	"accuracy",
 	"precision_fri",
 	"precision_frii",
@@ -41,6 +40,11 @@ METRIC_KEYS = {
 	"balanced_accuracy",
 	"confusion_matrix",
 }
+METRIC_KEYS = COMMON_METRIC_KEYS | {"validation_loss"}
+TEST_METRIC_KEYS = (COMMON_METRIC_KEYS - {"num_validation_samples"}) | {
+	"num_test_samples",
+	"test_loss",
+}
 
 
 def get_validation_indices(split_indices: dict[str, list[int]]) -> list[int]:
@@ -49,14 +53,24 @@ def get_validation_indices(split_indices: dict[str, list[int]]) -> list[int]:
 	return list(split_indices["validation"])
 
 
+def get_test_indices(split_indices: dict[str, list[int]]) -> list[int]:
+	"""Return test indices without accessing the train or validation splits."""
+
+	return list(split_indices["test"])
+
+
 def evaluate_model(
 	model: nn.Module,
 	checkpoint_path: str | Path,
 	validation_dataset: Dataset,
 	batch_size: int = 32,
 	device: str = "cpu",
+	split_name: str = "validation",
 ) -> dict[str, Any]:
-	"""Evaluate one checkpoint on the supplied validation dataset only."""
+	"""Evaluate one checkpoint on the supplied split without training."""
+
+	if split_name not in {"validation", "test"}:
+		raise ValueError("split_name must be 'validation' or 'test'.")
 
 	device_object = torch.device(device)
 	if device_object.type == "cuda" and not torch.cuda.is_available():
@@ -85,11 +99,11 @@ def evaluate_model(
 			y_predicted.extend(predictions.cpu().tolist())
 
 	if total_samples == 0:
-		raise ValueError("Cannot evaluate an empty validation dataset.")
+		raise ValueError(f"Cannot evaluate an empty {split_name} dataset.")
 	confusion = confusion_matrix(y_true, y_predicted, labels=LABELS)
 	return {
-		"num_validation_samples": total_samples,
-		"validation_loss": total_loss / total_samples,
+		f"num_{split_name}_samples": total_samples,
+		f"{split_name}_loss": total_loss / total_samples,
 		"accuracy": accuracy_score(y_true, y_predicted),
 		"precision_fri": precision_score(y_true, y_predicted, labels=LABELS, pos_label=0, zero_division=0),
 		"precision_frii": precision_score(y_true, y_predicted, labels=LABELS, pos_label=1, zero_division=0),
@@ -106,8 +120,8 @@ def evaluate_model(
 	}
 
 
-def _save_confusion_matrix(
-	confusion: list[list[int]], model_name: str, output_path: Path
+def save_confusion_matrix(
+	confusion: list[list[int]], model_name: str, output_path: Path, split_name: str = "validation"
 ) -> None:
 	figure, axis = plt.subplots(figsize=(5, 4))
 	image = axis.imshow(np.asarray(confusion), cmap="Blues")
@@ -116,7 +130,7 @@ def _save_confusion_matrix(
 	axis.set_ylabel("True label")
 	axis.set_xticks(range(2), CLASS_NAMES)
 	axis.set_yticks(range(2), CLASS_NAMES)
-	axis.set_title(f"{model_name.title()} validation confusion matrix")
+	axis.set_title(f"{model_name.title()} {split_name} confusion matrix")
 	for row in range(2):
 		for column in range(2):
 			axis.text(column, row, confusion[row][column], ha="center", va="center")
@@ -146,7 +160,7 @@ def save_comparison_results(
 			encoding="utf-8",
 		)
 		metric_paths[model_name] = path
-		_save_confusion_matrix(
+		save_confusion_matrix(
 			metrics["confusion_matrix"],
 			model_name,
 			confusion_dir / f"{model_name}_validation_confusion_matrix.png",
@@ -196,3 +210,71 @@ def save_comparison_results(
 	figure.savefig(comparison_figure_path, dpi=150)
 	plt.close(figure)
 	return metric_paths, comparison_path, comparison_figure_path
+
+
+def save_test_results(
+	metrics: dict[str, Any], checkpoint_path: str | Path, output_root: str | Path = "outputs"
+) -> tuple[Path, Path]:
+	"""Save the one-time selected-model test evaluation artifacts."""
+
+	output_root = Path(output_root)
+	metrics_dir = output_root / "metrics"
+	confusion_dir = output_root / "confusion_matrix"
+	metrics_dir.mkdir(parents=True, exist_ok=True)
+	confusion_dir.mkdir(parents=True, exist_ok=True)
+	json_path = metrics_dir / "resnet_test_evaluation.json"
+	csv_path = metrics_dir / "final_test_metrics.csv"
+	json_path.write_text(
+		json.dumps(
+			{
+				"model": "resnet",
+				"split": "test",
+				"checkpoint": str(checkpoint_path),
+				"test_evaluation_performed": True,
+				**metrics,
+			},
+			indent=2,
+		)
+		+ "\n",
+		encoding="utf-8",
+	)
+	csv_fields = [
+		"model",
+		"split",
+		"num_test_samples",
+		"test_loss",
+		"accuracy",
+		"precision_fri",
+		"precision_frii",
+		"recall_fri",
+		"recall_frii",
+		"f1_fri",
+		"f1_frii",
+		"macro_precision",
+		"macro_recall",
+		"macro_f1",
+		"weighted_f1",
+		"balanced_accuracy",
+	]
+	with csv_path.open("w", newline="", encoding="utf-8") as file_handle:
+		writer = csv.DictWriter(file_handle, fieldnames=csv_fields)
+		writer.writeheader()
+		writer.writerow(
+			{
+				field: (
+					"resnet"
+					if field == "model"
+					else "test"
+					if field == "split"
+					else metrics[field]
+				)
+				for field in csv_fields
+			}
+		)
+	save_confusion_matrix(
+		metrics["confusion_matrix"],
+		"resnet",
+		confusion_dir / "resnet_test_confusion_matrix.png",
+		split_name="test",
+	)
+	return json_path, csv_path

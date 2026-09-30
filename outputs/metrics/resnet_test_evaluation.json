@@ -1,0 +1,30 @@
+{
+  "model": "resnet",
+  "split": "test",
+  "checkpoint": "C:\\Users\\User\\Desktop\\research\\J26-IT-449-IT23308602-AGN-XAI\\outputs\\models\\resnet_cnn_best.pth",
+  "test_evaluation_performed": true,
+  "num_test_samples": 119,
+  "test_loss": 0.34639566986500714,
+  "accuracy": 0.8319327731092437,
+  "precision_fri": 0.8113207547169812,
+  "precision_frii": 0.8484848484848485,
+  "recall_fri": 0.8113207547169812,
+  "recall_frii": 0.8484848484848485,
+  "f1_fri": 0.8113207547169812,
+  "f1_frii": 0.8484848484848485,
+  "macro_precision": 0.8299028016009149,
+  "macro_recall": 0.8299028016009149,
+  "macro_f1": 0.8299028016009149,
+  "weighted_f1": 0.8319327731092437,
+  "balanced_accuracy": 0.8299028016009149,
+  "confusion_matrix": [
+    [
+      43,
+      10
+    ],
+    [
+      10,
+      56
+    ]
+  ]
+}
