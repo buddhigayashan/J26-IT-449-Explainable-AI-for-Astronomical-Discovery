@@ -29,3 +29,6 @@ Thumbs.db
 # VS Code local settings
 .vscode/
 .kilo/
+
+.gradio/
+demo_samples/

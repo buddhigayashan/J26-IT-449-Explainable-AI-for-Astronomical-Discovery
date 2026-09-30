@@ -92,3 +92,17 @@ python scripts/train_model.py --model resnet --config config.yaml
 ```
 
 Model 3 writes only to `outputs/models/resnet_cnn_best.pth`, `outputs/metrics/resnet_training_history.csv`, `outputs/metrics/resnet_validation_metrics.json`, and `outputs/figures/resnet_training_curves.png`. The test split remains unevaluated.
+
+## Viva Demo
+
+The local Gradio prototype uses only the selected ResNet checkpoint and does not retrain the model. If Gradio is not installed, run:
+
+```text
+pip install gradio
+```
+
+Launch the demo with:
+
+```text
+python demo/app.py
+```
