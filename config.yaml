@@ -52,6 +52,19 @@ training:
   batch_size: 32
   num_epochs: 20
   learning_rate: 0.001
+  weight_decay: 0.0
   num_workers: 0
   early_stopping_patience: 5
   device: "cpu"
+
+models:
+  improved:
+    num_epochs: 30
+    early_stopping_patience: 7
+  resnet:
+    learning_rate: 0.0003
+    weight_decay: 0.0001
+    num_epochs: 30
+    early_stopping_patience: 7
+    scheduler_patience: 2
+    scheduler_factor: 0.5

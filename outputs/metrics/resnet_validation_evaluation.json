@@ -1,0 +1,28 @@
+{
+  "model": "resnet",
+  "test_evaluation_performed": false,
+  "num_validation_samples": 119,
+  "validation_loss": 0.35014713111043977,
+  "accuracy": 0.8571428571428571,
+  "precision_fri": 0.8913043478260869,
+  "precision_frii": 0.8356164383561644,
+  "recall_fri": 0.7735849056603774,
+  "recall_frii": 0.9242424242424242,
+  "f1_fri": 0.8282828282828283,
+  "f1_frii": 0.8776978417266187,
+  "macro_precision": 0.8634603930911257,
+  "macro_recall": 0.8489136649514009,
+  "macro_f1": 0.8529903350047234,
+  "weighted_f1": 0.8556894743945104,
+  "balanced_accuracy": 0.8489136649514009,
+  "confusion_matrix": [
+    [
+      41,
+      12
+    ],
+    [
+      5,
+      61
+    ]
+  ]
+}

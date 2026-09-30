@@ -1,0 +1,28 @@
+{
+  "model": "baseline",
+  "test_evaluation_performed": false,
+  "num_validation_samples": 119,
+  "validation_loss": 0.6794187291329649,
+  "accuracy": 0.5714285714285714,
+  "precision_fri": 0.5384615384615384,
+  "precision_frii": 0.5806451612903226,
+  "recall_fri": 0.2641509433962264,
+  "recall_frii": 0.8181818181818182,
+  "f1_fri": 0.35443037974683544,
+  "f1_frii": 0.6792452830188679,
+  "macro_precision": 0.5595533498759305,
+  "macro_recall": 0.5411663807890223,
+  "macro_f1": 0.5168378313828517,
+  "weighted_f1": 0.5345798218977106,
+  "balanced_accuracy": 0.5411663807890223,
+  "confusion_matrix": [
+    [
+      14,
+      39
+    ],
+    [
+      12,
+      54
+    ]
+  ]
+}

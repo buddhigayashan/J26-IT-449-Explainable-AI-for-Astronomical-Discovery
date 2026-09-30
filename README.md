@@ -65,10 +65,30 @@ Further model architectures will be considered only after the baseline evaluatio
 
 ## Phase 3: Baseline CNN
 
-Start baseline training with:
+Start Model 1 baseline training with:
 
 ```text
 python scripts/train_model.py --config config.yaml
 ```
 
 The pipeline uses the existing seed-42 train/validation split, CrossEntropyLoss, Adam, train-only augmentation, and early stopping on validation loss. It saves only the best checkpoint to `outputs/models/baseline_cnn_best.pth`, along with training history, curves, and validation metrics under `outputs/metrics/` and `outputs/figures/`. The test split is intentionally not evaluated in Phase 3.
+
+Model 2 is a moderately stronger CNN with three convolutional blocks using channels `32 -> 64 -> 128`, BatchNorm, ReLU, conservative max pooling, dropout, and a retained `4x4` spatial representation before classification. It remains CPU-compatible and does not use ResNet or Grad-CAM.
+
+Start Model 2 training with:
+
+```text
+python scripts/train_model.py --model improved --config config.yaml
+```
+
+Model 2 writes only to its separate artifacts: `outputs/models/improved_cnn_best.pth`, `outputs/metrics/improved_training_history.csv`, `outputs/metrics/improved_validation_metrics.json`, and `outputs/figures/improved_training_curves.png`. The test split is not evaluated.
+
+Model 3 is a lightweight ResNet-style CNN with three residual blocks, BatchNorm, ReLU, projection skip connections where channel dimensions change, and a retained `2x2` spatial representation. It has 339,746 trainable parameters and uses CPU-compatible Adam settings with learning rate `0.0003`, weight decay `0.0001`, and `ReduceLROnPlateau` scheduling.
+
+Start Model 3 training with:
+
+```text
+python scripts/train_model.py --model resnet --config config.yaml
+```
+
+Model 3 writes only to `outputs/models/resnet_cnn_best.pth`, `outputs/metrics/resnet_training_history.csv`, `outputs/metrics/resnet_validation_metrics.json`, and `outputs/figures/resnet_training_curves.png`. The test split remains unevaluated.

@@ -19,14 +19,17 @@ from src.utils.seed import set_global_seed
 
 @dataclass(frozen=True)
 class TrainingConfig:
-	"""Configurable baseline training settings."""
+	"""Configurable training settings shared by the model variants."""
 
 	seed: int = 42
 	batch_size: int = 32
 	learning_rate: float = 0.001
+	weight_decay: float = 0.0
 	num_epochs: int = 20
 	num_workers: int = 0
 	early_stopping_patience: int = 5
+	scheduler_patience: int | None = None
+	scheduler_factor: float = 0.5
 	device: str = "cpu"
 
 
@@ -86,17 +89,39 @@ def _save_curves(history: list[dict[str, float | int]], path: Path) -> None:
 	plt.close(figure)
 
 
+def training_artifact_paths(
+	output_root: str | Path, artifact_prefix: str = "baseline"
+) -> dict[str, Path]:
+	"""Return model-specific output paths without overwriting other runs."""
+
+	output_root = Path(output_root)
+	if artifact_prefix == "baseline":
+		history_name = "training_history.csv"
+		curves_name = "training_curves.png"
+	else:
+		history_name = f"{artifact_prefix}_training_history.csv"
+		curves_name = f"{artifact_prefix}_training_curves.png"
+	return {
+		"checkpoint": output_root / "models" / f"{artifact_prefix}_cnn_best.pth",
+		"history": output_root / "metrics" / history_name,
+		"curves": output_root / "figures" / curves_name,
+		"validation_metrics": output_root / "metrics" / f"{artifact_prefix}_validation_metrics.json",
+	}
+
+
 def train_model(
 	train_dataset: Dataset,
 	validation_dataset: Dataset,
 	config: TrainingConfig | None = None,
 	model: nn.Module | None = None,
 	output_root: str | Path = "outputs",
+	artifact_prefix: str = "baseline",
 ) -> dict[str, Any]:
-	"""Train the baseline using train/validation data only.
+	"""Train a selected model using train/validation data only.
 
 	The test dataset is intentionally not accepted by this API. Only the best
-	validation-loss checkpoint is persisted.
+	validation-loss checkpoint is persisted. ``artifact_prefix`` isolates model
+	outputs, preserving baseline results when training an improved model.
 	"""
 
 	config = config or TrainingConfig()
@@ -121,20 +146,33 @@ def train_model(
 		num_workers=config.num_workers,
 	)
 
-	model = model or BaselineCNN()
+	model = BaselineCNN() if model is None else model
 	model.to(device)
 	criterion = nn.CrossEntropyLoss()
-	optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+	optimizer = torch.optim.Adam(
+		model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
+	)
+	scheduler = (
+		torch.optim.lr_scheduler.ReduceLROnPlateau(
+			optimizer,
+			mode="min",
+			factor=config.scheduler_factor,
+			patience=config.scheduler_patience,
+		)
+		if config.scheduler_patience is not None
+		else None
+	)
 	output_root = Path(output_root)
 	model_dir = output_root / "models"
 	metrics_dir = output_root / "metrics"
 	figures_dir = output_root / "figures"
 	for directory in (model_dir, metrics_dir, figures_dir):
 		directory.mkdir(parents=True, exist_ok=True)
-	checkpoint_path = model_dir / "baseline_cnn_best.pth"
-	history_path = metrics_dir / "training_history.csv"
-	curves_path = figures_dir / "training_curves.png"
-	validation_metrics_path = metrics_dir / "baseline_validation_metrics.json"
+	paths = training_artifact_paths(output_root, artifact_prefix)
+	checkpoint_path = paths["checkpoint"]
+	history_path = paths["history"]
+	curves_path = paths["curves"]
+	validation_metrics_path = paths["validation_metrics"]
 
 	history: list[dict[str, float | int]] = []
 	best_validation_loss = float("inf")
@@ -147,12 +185,15 @@ def train_model(
 		validation_loss, validation_accuracy = _run_epoch(
 			model, validation_loader, criterion, device
 		)
+		if scheduler is not None:
+			scheduler.step(validation_loss)
 		epoch_metrics = {
 			"epoch": epoch,
 			"train_loss": train_loss,
 			"validation_loss": validation_loss,
 			"train_accuracy": train_accuracy,
 			"validation_accuracy": validation_accuracy,
+			"learning_rate": optimizer.param_groups[0]["lr"],
 		}
 		history.append(epoch_metrics)
 		if validation_loss < best_validation_loss:
@@ -178,6 +219,7 @@ def train_model(
 	_save_curves(history, curves_path)
 	validation_metrics = {
 		"dataset": "MiraBest Zenodo v1 basic binary dataset",
+		"model": artifact_prefix,
 		"best_epoch": best_epoch,
 		"best_validation_loss": best_validation_loss,
 		"best_validation_accuracy": history[best_epoch - 1]["validation_accuracy"],

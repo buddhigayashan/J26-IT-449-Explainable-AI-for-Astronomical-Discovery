@@ -16,12 +16,20 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.data.download_mirabest import load_mirabest
 from src.data.preprocess import PreprocessConfig
 from src.data.split_dataset import build_preprocessed_splits
+from src.models.improved_cnn import ImprovedCNN
+from src.models.resnet_cnn import ResNetCNN
 from src.models.train import TrainingConfig, train_model
 
 
 def main() -> int:
-	parser = argparse.ArgumentParser(description="Train the MiraBest baseline CNN.")
+	parser = argparse.ArgumentParser(description="Train a MiraBest CNN model.")
 	parser.add_argument("--config", type=Path, default=PROJECT_ROOT / "config.yaml")
+	parser.add_argument(
+		"--model",
+		choices=("baseline", "improved", "resnet"),
+		default="baseline",
+		help="Model architecture to train (default: baseline).",
+	)
 	args = parser.parse_args()
 
 	config = yaml.safe_load(args.config.read_text(encoding="utf-8"))
@@ -45,22 +53,38 @@ def main() -> int:
 	)
 	splits = build_preprocessed_splits(dataset, split_indices, preprocess_config)
 	training_config = config["training"]
+	model_config = config.get("models", {}).get(args.model, {})
+	model = {
+		"improved": ImprovedCNN,
+		"resnet": ResNetCNN,
+	}.get(args.model, lambda: None)()
 	result = train_model(
 		splits["train"],
 		splits["validation"],
 		config=TrainingConfig(
 			seed=int(training_config["seed"]),
 			batch_size=int(training_config["batch_size"]),
-			learning_rate=float(training_config["learning_rate"]),
-			num_epochs=int(training_config["num_epochs"]),
+			learning_rate=float(model_config.get("learning_rate", training_config["learning_rate"])),
+			weight_decay=float(model_config.get("weight_decay", training_config.get("weight_decay", 0.0))),
+			num_epochs=int(model_config.get("num_epochs", training_config["num_epochs"])),
 			num_workers=int(training_config["num_workers"]),
-			early_stopping_patience=int(training_config["early_stopping_patience"]),
+			early_stopping_patience=int(
+				model_config.get("early_stopping_patience", training_config["early_stopping_patience"])
+			),
+			scheduler_patience=(
+				int(model_config["scheduler_patience"])
+				if "scheduler_patience" in model_config
+				else None
+			),
+			scheduler_factor=float(model_config.get("scheduler_factor", 0.5)),
 			device=str(training_config["device"]),
 		),
+		model=model,
 		output_root=PROJECT_ROOT / "outputs",
+		artifact_prefix=args.model,
 	)
 
-	print("Baseline CNN training complete")
+	print(f"{args.model.title()} CNN training complete")
 	print(f"Best epoch: {result['best_epoch']}")
 	print(f"Best validation loss: {result['best_validation_loss']:.6f}")
 	print(f"Best validation accuracy: {result['best_validation_accuracy']:.4f}")
