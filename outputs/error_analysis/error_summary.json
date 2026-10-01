@@ -1,0 +1,13 @@
+{
+  "total_test_samples": 119,
+  "total_correct": 99,
+  "total_incorrect": 20,
+  "FRI_to_FRII": 10,
+  "FRII_to_FRI": 10,
+  "mean_confidence_correct": 0.853509703067818,
+  "mean_confidence_incorrect": 0.6738903284072876,
+  "high_confidence_error_count": 3,
+  "low_confidence_count": 14,
+  "checkpoint": "C:\\Users\\User\\Desktop\\research\\J26-IT-449-IT23308602-AGN-XAI\\outputs\\models\\resnet_cnn_best.pth",
+  "test_split_evaluated": true
+}
