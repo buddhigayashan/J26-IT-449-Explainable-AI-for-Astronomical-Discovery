@@ -1,0 +1,12 @@
+{
+  "configuration": "no_augmentation",
+  "best_epoch": 27,
+  "best_validation_loss": 0.4004888880152662,
+  "validation_accuracy": 0.8067226890756303,
+  "macro_precision": 0.8076584507042254,
+  "macro_recall": 0.7997427101200686,
+  "macro_f1": 0.80219700802197,
+  "balanced_accuracy": 0.7997427101200686,
+  "seed": 42,
+  "test_evaluation_performed": false
+}
