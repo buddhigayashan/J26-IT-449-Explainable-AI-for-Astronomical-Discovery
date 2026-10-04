@@ -13,13 +13,15 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.inference.predict import predict_image
 
 
-DEMO_NOTE = "This prototype is designed for MiraBest-style radio galaxy images and predicts FR-I vs FR-II."
+DEMO_NOTE = "Supported input: radio-galaxy images intended for FR-I / FR-II classification."
 
 
 def predict_for_ui(image: Any) -> tuple[Any, dict[str, float]]:
 	"""Adapt reusable inference output to Gradio image and label components."""
 
 	result = predict_image(image)
+	if result["predicted_class"] == "UNSUPPORTED":
+		return image, "Unsupported / Out-of-domain: " + result["message"]
 	return image, result["probabilities"]
 
 
