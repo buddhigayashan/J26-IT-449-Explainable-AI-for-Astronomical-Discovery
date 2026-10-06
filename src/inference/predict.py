@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 import torch
 
@@ -15,6 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.models.resnet_cnn import ResNetCNN
 from src.ood.input_guard import prepare_guarded_image
+from src.ood.external_radio import prepare_external_radio_image
 from src.ood.ood_detector import OODDetector
 from src.ood.calibration import load_calibration, checkpoint_sha256
 
@@ -32,6 +33,9 @@ class PredictionResult(TypedDict):
 	probabilities: dict[str, float]
 	message: str
 	ood: dict[str, Any] | None
+	input_mode: NotRequired[str]
+	input_handling: NotRequired[str]
+	representations: NotRequired[list[str]]
 
 
 def preprocess_image(image: Any) -> torch.Tensor:
@@ -70,11 +74,19 @@ def load_calibrated_ood_detector() -> OODDetector:
 	return detector
 
 
-def predict_image(image: Any) -> PredictionResult:
+def predict_image(image: Any, *, input_mode: str = "mirabest") -> PredictionResult:
 	"""Guard, validate, and classify one image using the saved checkpoint."""
 
+	if input_mode == "auto_web":
+		from src.inference.auto import predict_auto_image
+		return predict_auto_image(image)
 	try:
-		guarded = prepare_guarded_image(image)
+		if input_mode == "mirabest":
+			guarded = prepare_guarded_image(image)
+		elif input_mode == "external_radio":
+			guarded = prepare_external_radio_image(image)
+		else:
+			raise ValueError("Unknown input mode; select mirabest, external_radio, or auto_web.")
 	except ValueError as error:
 		return {
 			"predicted_class": "UNSUPPORTED",
@@ -96,7 +108,7 @@ def predict_image(image: Any) -> PredictionResult:
 			"probabilities": {},
 			"message": (
 				"This image appears to be outside the supported radio-galaxy input domain. "
-				"The FR-I/FR-II classifier was not applied."
+				"No FR-I/FR-II prediction is reported. " + str(ood_result.get("reason", "OOD rejection"))
 			),
 			"ood": ood_result,
 		}
@@ -118,6 +130,8 @@ def predict_image(image: Any) -> PredictionResult:
 		"predicted_class": predicted_class,
 		"confidence": probabilities[predicted_class],
 		"probabilities": probabilities,
-		"message": "Image accepted as in-distribution for FR-I/FR-II classification.",
+		"message": ("External map passed compatibility checks and frozen OOD thresholds; "
+			"survey validity and prediction accuracy are unverified." if input_mode == "external_radio"
+			else "Image accepted as in-distribution for FR-I/FR-II classification."),
 		"ood": ood_result,
 	}
