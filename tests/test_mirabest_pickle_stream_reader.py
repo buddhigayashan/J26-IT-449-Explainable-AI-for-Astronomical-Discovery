@@ -12,6 +12,7 @@ from src.data.mirabest_pickle_stream_reader import (
     ReaderInstrumentation,
     StreamReaderError,
     canonical_sha256,
+    extract_selected_archive,
     read_member,
     scan_archive,
 )
@@ -60,6 +61,13 @@ def _archive_fixture(path):
             info = tarfile.TarInfo(name)
             info.size = len(payload)
             archive.addfile(info, __import__("io").BytesIO(payload))
+
+
+def _archive_pins(path):
+    return (
+        hashlib.sha256(path.read_bytes()).hexdigest(),
+        hashlib.md5(path.read_bytes()).hexdigest(),
+    )
 
 
 def test_valid_protocol_three_fixture_and_index_mapping(tmp_path):
@@ -202,6 +210,86 @@ def test_no_eager_loader_or_ml_dependencies_are_needed(tmp_path):
     path = _fixture(tmp_path / "data_batch_1")
     records = read_member(path, "batches/data_batch_1", {0}, set(range(1, 88)))
     assert len(records) == 1
+
+
+def test_bounded_archive_extraction_returns_exactly_eight_in_order(tmp_path):
+    archive = tmp_path / "synthetic.tar.gz"
+    _archive_fixture(archive)
+    sha256, md5 = _archive_pins(archive)
+    selected = [615, 0, 672, 119, 527, 176, 88, 671]
+    instrumentation = ReaderInstrumentation()
+    records = extract_selected_archive(
+        archive, range(673), range(673, 792), selected,
+        expected_sha256=sha256, expected_md5=md5,
+        instrumentation=instrumentation,
+    )
+    assert [record.dataset_index for record in records] == sorted(selected)
+    assert all(record.pixels.__class__ is bytes for record in records)
+    assert all(len(record.pixels) == 150 * 150 for record in records)
+    assert all(
+        np.frombuffer(record.pixels, dtype=np.uint8).reshape(150, 150).shape == (150, 150)
+        for record in records
+    )
+    assert all(np.frombuffer(record.pixels, dtype=np.uint8).dtype == np.uint8
+               for record in records)
+    assert all(record.label in (0, 1) for record in records)
+    assert all(record.filename.endswith(".png") for record in records)
+    assert instrumentation.permitted_payload_extractions == 8
+    assert instrumentation.maximum_pixel_buffer_size == 22500
+    assert instrumentation.forbidden_payload_encounters == 119
+    assert instrumentation.forbidden_payload_extraction_attempts == 0
+    assert instrumentation.forbidden_payloads_materialized == 0
+
+
+def test_bounded_archive_extraction_accepts_empty_selection(tmp_path):
+    archive = tmp_path / "synthetic.tar.gz"
+    _archive_fixture(archive)
+    sha256, md5 = _archive_pins(archive)
+    instrumentation = ReaderInstrumentation()
+    records = extract_selected_archive(
+        archive, range(673), range(673, 792), [],
+        expected_sha256=sha256, expected_md5=md5,
+        instrumentation=instrumentation,
+    )
+    assert records == []
+    assert instrumentation.permitted_payload_extractions == 0
+    assert instrumentation.maximum_pixel_buffer_size == 0
+
+
+@pytest.mark.parametrize(
+    "selected",
+    [
+        list(range(9)),
+        [0, 0],
+        [-1],
+        [792],
+        [673],
+    ],
+)
+def test_bounded_archive_extraction_rejects_invalid_selection(tmp_path, selected):
+    archive = tmp_path / "synthetic.tar.gz"
+    _archive_fixture(archive)
+    sha256, md5 = _archive_pins(archive)
+    with pytest.raises(StreamReaderError):
+        extract_selected_archive(
+            archive, range(673), range(673, 792), selected,
+            expected_sha256=sha256, expected_md5=md5,
+        )
+
+
+def test_bounded_archive_extraction_preserves_hashable_pixels_and_budget(tmp_path):
+    archive = tmp_path / "synthetic.tar.gz"
+    _archive_fixture(archive)
+    sha256, md5 = _archive_pins(archive)
+    selected = list(range(8))
+    records = extract_selected_archive(
+        archive, range(673), range(673, 792), selected,
+        expected_sha256=sha256, expected_md5=md5,
+    )
+    assert len(records) == 8
+    assert sum(len(record.pixels) for record in records) == 180000
+    assert canonical_sha256(records[0].pixels) == canonical_sha256(records[0].pixels)
+    assert canonical_sha256(records[0].pixels) != canonical_sha256(records[1].pixels)
 
 
 def test_metadata_only_tar_scan_validates_all_members_and_mixed_split(tmp_path):

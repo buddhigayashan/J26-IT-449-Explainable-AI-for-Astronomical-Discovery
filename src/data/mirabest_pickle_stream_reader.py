@@ -19,6 +19,8 @@ IMAGE_BYTES = 150 * 150
 EXPECTED_ROWS = 88
 EXPECTED_SHAPE = (150, 150)
 EXPECTED_DTYPE = "u1"
+MAX_SELECTED_IMAGES = 8
+MAX_SELECTED_BYTES = MAX_SELECTED_IMAGES * IMAGE_BYTES
 SPLIT_SHA256 = "c4a548a66dd37505b8d663bfe6826258364b8118afde4928f5f83a6cdd263008"
 MAGIC_CANONICAL = b"AGN-XAI-RAW-IMAGE-SHA256-v1\0"
 
@@ -244,7 +246,8 @@ def _read_pickle_bytes_header(cursor: _Cursor, opcode: int) -> int:
 
 def _scan_member(handle: BinaryIO, member: str, allowed: frozenset[int],
                  forbidden: frozenset[int], instrumentation: ReaderInstrumentation,
-                 extract_pixels: bool) -> list[StreamRecord]:
+                 extract_pixels: bool,
+                 extract_indices: frozenset[int] | None = None) -> list[StreamRecord]:
     cursor = _Cursor(handle)
     if cursor.byte() != 0x80 or cursor.byte() != 3:
         raise StreamReaderError("Only pickle protocol 3 is supported.")
@@ -340,7 +343,8 @@ def _scan_member(handle: BinaryIO, member: str, allowed: frozenset[int],
                 if index not in allowed:
                     instrumentation.unexpected_parser_events += 1
                     raise StreamReaderError("Image index is outside the authorized scope.")
-                payload_positions.append((index, cursor.position))
+                if extract_indices is None or index in extract_indices:
+                    payload_positions.append((index, cursor.position))
                 cursor.skip(length)
             elif opcode == 0x43:
                 payload = cursor.read(length)
@@ -419,6 +423,94 @@ def read_member(path: str | Path, member: str, allowed_indices: Iterable[int],
         instrumentation = ReaderInstrumentation()
     with Path(path).open("rb") as handle:
         return _scan_member(handle, member, allowed, forbidden, instrumentation, extract_pixels)
+
+
+def _validate_selected_indices(selected_indices: Iterable[int],
+                               allowed: frozenset[int],
+                               forbidden: frozenset[int]) -> frozenset[int]:
+    values = list(selected_indices)
+    if len(values) > MAX_SELECTED_IMAGES:
+        raise StreamReaderError("Selected image count exceeds the pilot limit.")
+    if len(values) != len(set(values)):
+        raise StreamReaderError("Selected image indices contain duplicates.")
+    if any(type(index) is not int or not 0 <= index < 792 for index in values):
+        raise StreamReaderError("Selected image index is invalid.")
+    selected = frozenset(values)
+    if selected & forbidden:
+        raise StreamReaderError("Selected image index belongs to frozen TEST.")
+    if not selected <= allowed:
+        raise StreamReaderError("Selected image index is outside TRAIN/VALIDATION.")
+    if len(selected) * IMAGE_BYTES > MAX_SELECTED_BYTES:
+        raise StreamReaderError("Selected image payload budget exceeded.")
+    return selected
+
+
+def extract_selected_archive(
+    path: str | Path,
+    allowed_indices: Iterable[int],
+    forbidden_indices: Iterable[int],
+    selected_indices: Iterable[int],
+    *,
+    expected_sha256: str,
+    expected_md5: str,
+    validate_internal_manifest: bool = True,
+    instrumentation: ReaderInstrumentation | None = None,
+) -> list[StreamRecord]:
+    """Extract only an explicitly bounded subset from a pinned archive."""
+    allowed = frozenset(allowed_indices)
+    forbidden = frozenset(forbidden_indices)
+    if allowed & forbidden:
+        raise StreamReaderError("Allowed and forbidden sets overlap.")
+    if (len(allowed) != 673 or len(forbidden) != 119
+            or allowed | forbidden != frozenset(range(792))):
+        raise StreamReaderError("Archive extraction requires the complete frozen research split.")
+    selected = _validate_selected_indices(selected_indices, allowed, forbidden)
+    if instrumentation is None:
+        instrumentation = ReaderInstrumentation()
+    if _file_digest(path, "sha256") != expected_sha256:
+        raise StreamReaderError("Archive SHA-256 mismatch.")
+    if _file_digest(path, "md5") != expected_md5:
+        raise StreamReaderError("Archive MD5 mismatch.")
+    try:
+        archive = tarfile.open(path, mode="r:gz")
+    except (OSError, tarfile.TarError) as error:
+        raise StreamReaderError("Cannot open gzip tar archive.") from error
+    records: list[StreamRecord] = []
+    with archive:
+        files = _validate_archive_members(archive)
+        if validate_internal_manifest:
+            _validate_archive_manifest(archive)
+        for member_name in EXPECTED_MEMBER_NAMES:
+            member = files[member_name]
+            stream = archive.extractfile(member)
+            if stream is None:
+                raise StreamReaderError(f"Cannot open archive member: {member_name}")
+            before = ReaderInstrumentation()
+            records.extend(_scan_member(
+                stream, member_name, allowed, forbidden, before,
+                True, selected,
+            ))
+            instrumentation.permitted_payload_extractions += before.permitted_payload_extractions
+            instrumentation.forbidden_payload_encounters += before.forbidden_payload_encounters
+            instrumentation.forbidden_payload_extraction_attempts += before.forbidden_payload_extraction_attempts
+            instrumentation.forbidden_payloads_materialized += before.forbidden_payloads_materialized
+            instrumentation.maximum_pixel_buffer_size = max(
+                instrumentation.maximum_pixel_buffer_size,
+                before.maximum_pixel_buffer_size,
+            )
+            instrumentation.unexpected_parser_events += before.unexpected_parser_events
+            instrumentation.payload_boundaries += before.payload_boundaries
+            instrumentation.label_count += before.label_count
+            instrumentation.filename_count += before.filename_count
+            instrumentation.allowed_row_count += before.allowed_row_count
+            instrumentation.forbidden_row_count += before.forbidden_row_count
+            instrumentation.payload_lengths = tuple(sorted(set(
+                instrumentation.payload_lengths + before.payload_lengths
+            )))
+    records.sort(key=lambda record: record.dataset_index)
+    if len(records) != len(selected):
+        raise StreamReaderError("Selected image extraction count mismatch.")
+    return records
 
 
 def scan_archive(path: str | Path, allowed_indices: Iterable[int],
