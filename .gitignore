@@ -5,12 +5,20 @@ venv/
 # Python cache
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Jupyter
 .ipynb_checkpoints/
 
-# Environment files
+# Environment files and local secrets (examples remain tracked)
 .env
+**/.env
+**/.env.*
+!**/.env.example
 
 # Dataset files
 data/raw/

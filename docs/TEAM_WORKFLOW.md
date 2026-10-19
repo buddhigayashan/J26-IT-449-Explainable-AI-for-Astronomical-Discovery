@@ -1,6 +1,8 @@
 # J26-IT-449 — Team Git Workflow
 
-This repository began as Buddhi Jayawickrama's AGN-XAI research component. Its existing root-level `src/`, `demo/`, `scripts/`, `tests/`, `notebooks/`, `outputs/`, and configuration are **not** moved or replaced by this scaffold.
+This repository began as Buddhi Jayawickrama's AGN-XAI research component. Its existing root-level `src/`, `demo/`, `scripts/`, `tests/`, `notebooks/`, `outputs/`, and configuration are **not** moved or replaced by the team scaffold.
+
+**Start here:** [SETUP_GUIDE.md](SETUP_GUIDE.md) · [ENVIRONMENT.md](ENVIRONMENT.md) · [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ## Branches
 - `main`: stable, reviewed releases; do not push experiments directly.
@@ -9,6 +11,7 @@ This repository began as Buddhi Jayawickrama's AGN-XAI research component. Its e
 - `edirisooriya`: P.K. Edirisooriya (IT23330696).
 - `rajapaksha`: D.O. Rajapaksha (IT23276932).
 - `sewwandi`: K.H.S.D. Sewwandi (IT23228726).
+- `feature/authentication`: future Login/Register implementation, not completed.
 - `feature/external-radio-input`: existing Buddhi development history; retain it.
 
 ## Contribution process
@@ -23,5 +26,6 @@ This repository began as Buddhi Jayawickrama's AGN-XAI research component. Its e
 - Never commit passwords, API keys, raw datasets, model checkpoints, or generated research outputs without explicit review.
 - Preserve frozen CNN, evaluation, split and XAI artifacts; avoid rerunning locked TEST evaluations.
 - Do not merge or relocate the existing Buddhi root-level implementation without a reviewed migration plan.
-- Authentication should be developed and tested on a dedicated feature branch, then merged into `developer`.
+- Authentication should be developed and tested on its feature branch, then merged into `developer`.
 - The web technology stack is not yet selected; the `website/` folders are placeholders, not an implemented Login/Register system.
+- GitHub branch protection and collaborator invitations are separate administrative tasks, not guaranteed by this document.

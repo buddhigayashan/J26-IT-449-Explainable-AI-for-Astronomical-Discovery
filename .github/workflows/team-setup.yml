@@ -1,0 +1,23 @@
+name: Team Setup Structure
+
+on:
+  push:
+    branches: [developer]
+  pull_request:
+    branches: [developer, main]
+
+permissions:
+  contents: read
+
+jobs:
+  structure-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate tracked setup structure (no datasets or models)
+        run: python scripts/check_team_setup.py --profile team
