@@ -1,0 +1,179 @@
+protocol: Phase3B-XAI-v1.0.0
+stage: 3B.1
+execution_authorized: false
+provenance:
+  checkpoint: outputs/models/resnet_cnn_best.pth
+  checkpoint_sha256: d5e1f126c13c2b7bebb95e35f41f0bc6397dd0ea9f4fbfcfbc55648609ab5bc7
+  split: data/splits/split_indices.json
+  split_sha256: c4a548a66dd37505b8d663bfe6826258364b8118afde4928f5f83a6cdd263008
+  archive: data/raw/mirabest/batches.tar.gz
+  archive_md5: fa9d6ad8fdde95b0a19df11433e8bca3
+  archive_sha256: 505e0b0761a76364a417695380d32d9f26cca7bc0a2608cad46ab338fa46a6b8
+  source: https://zenodo.org/records/4288837
+  dataset: MiraBest Zenodo v1 basic binary local verified payload
+  size: 792
+  ordering: data_batch_1 through data_batch_8, then test_batch; 88 records each
+splits:
+  counts: {train: 554, validation: 119, test: 119}
+  test_images: forbidden
+  archive_partition_is_not_research_split: true
+sampling:
+  engineering_per_class: 20
+  engineering_key: 'Phase3B-XAI-v1.0.0|engineering|42|<dataset_index>'
+  engineering_digest: SHA-256 ascending hex, then ascending index
+  validation: all saved validation indices, ascending index
+  class_mapping: {0: FRI, 1: FRII}
+  selection_by_outcomes: forbidden
+source_identity:
+  field: filenames
+  pattern: 'BestCat_proc/Cropped/<class_code>_<field1>_<signed_field2>.png'
+  key: 'filename-coordinate-fields:<field1>|<signed_field2>'
+  verified_astronomical_id: false
+  include_class_code: false
+  infer_units_or_angular_match: false
+preprocessing:
+  existing_validation_transform: true
+  image_shape: [150, 150]
+  grayscale: true
+  dtype: float32
+  mean: 0.5
+  std: 0.5
+  augmentation: false
+gradcam:
+  target_layer: blocks.2.convolution.3
+  gradient_score: pre-softmax class logit
+  native_shape: [19, 19]
+  display_shape: [150, 150]
+  resize: bilinear, align_corners=false
+  target: original predicted class, fixed for all interventions
+  normalization: existing core min-max; preserve existing degenerate tolerance
+faithfulness:
+  primary_score: probability of fixed original predicted class
+  secondary_scores: [target_logit, target_logit_minus_other_logit]
+  fractions: [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.0]
+  primary_steps: 6
+  aopc: 'mean_{k=1..K}[s(x)-s(x_deleted_k)]; primary K=6'
+  deletion_auc: trapezoidal integral of score over all deletion fractions
+  primary_contrast: Grad-CAM AOPC minus mean of exactly 20 random AOPCs
+  second_contrast: Grad-CAM AOPC minus brightness AOPC
+  tile_boundaries: floor(150*j/19), j=0..19, disjoint coordinate tiles, not receptive fields
+  cam_ranking: descending raw native CAM, fixed before deletion
+  brightness_ranking: descending mean original tile intensity
+  pixel_budget: floor(22500*f); exact nested masks; truncate last tile
+  within_tile_order: ascending row-major pixel index
+  primary_replacement: median outer five-pixel border in intensity space
+  sensitivity_replacements:
+    black: intensity 0, normalized -1
+    gaussian: {sigma_pixels: 3, radius_pixels: 9, padding: reflect}
+  intensity_range: [0, 1]
+  negative_drops: retain unchanged
+  random_permutations_per_image: 20
+  random_seeds: [1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019]
+  random_generator: NumPy Generator(PCG64(SeedSequence([seed, dataset_index])))
+  reuse_random_orders: all replacement policies and scores
+  cam_and_brightness_rankings_per_image: 1
+  tile_tie_key: 'Phase3B-XAI-v1.0.0|tile-tie|42|<dataset_index>|<tile_id>'
+  tie_sort: ascending SHA-256 hex, then ascending tile ID; no additional tie replicates
+stability:
+  metric: Jaccard, intersection cardinality divided by union cardinality
+  primary_top_fraction: 0.10
+  sensitivity_top_fractions: [0.05, 0.20]
+  mask_size: ceil(q * number_of_common_valid_pixels)
+  alignment: inverse-align continuous CAM, then rank within common valid domain
+  exclude: padding and incomplete interpolation support
+  minimum_valid_fraction: 0.80
+  primary_grid: [150, 150]
+  secondary_grid: [19, 19]
+  pixel_tie_key: 'Phase3B-XAI-v1.0.0|pixel-tie|42|<dataset_index>|<original_coordinate_pixel_id>'
+  tie_sort: ascending SHA-256 hex, then ascending pixel ID
+  report_boundary_ties: true
+transformations:
+  independent_from_original: true
+  rotations_degrees: [-5, -2, 2, 5]
+  sensitivity_rotations_degrees: [-15, 15]
+  rotation_interpolation: bilinear
+  rotation_fill: border median
+  output_shape: [150, 150]
+  flips: [horizontal, vertical]
+  gaussian_noise_std: [0.005, 0.01]
+  noise_seeds: [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009]
+  noise_generator: NumPy Generator(PCG64(SeedSequence([seed, dataset_index])))
+  brightness_gains: [0.98, 1.02]
+  brightness_interpretation: secondary display-intensity sensitivity, not calibrated radio flux
+  clipping: intensity [0,1]; record clipped fraction
+  model_diagnostics: [original_class_probability_change, original_class_margin_change, class_flip]
+  reporting: all valid pairs, prediction-preserving pairs, flipped pairs; no target switching
+emission_proxy:
+  background: median outer five-pixel border
+  dispersion: 1.4826 * median(abs(border - background)); not instrumental noise
+  threshold: 'background + max(sigma_factor * dispersion, dynamic_fraction * (max(u)-background), 1/255)'
+  primary: {sigma_factor: 3, dynamic_fraction: 0.05}
+  sensitivities: [{sigma_factor: 2, dynamic_fraction: 0.02}, {sigma_factor: 5, dynamic_fraction: 0.10}]
+  membership: strict intensity greater than threshold
+  manual_or_cam_guided_mask_changes: forbidden
+  attribution: unnormalized nonnegative upsampled CAM U
+  emission_mass: sum(U*E)/sum(U)
+  background_mass: 1 - emission_mass
+  emission_area: sum(E)/22500
+  enrichment: emission_mass - emission_area
+  secondary_metric: top-10-percent CAM versus emission mask IoU
+  controls: [positive_intensity_above_background, uniform_attribution, seeded_random_attribution]
+  random_controls: 20 iid uniform native maps; deletion seed list; PCG64(SeedSequence([seed,dataset_index,1]))
+  flags: [empty_mask, full_mask, zero_border_dispersion, border_touching_emission]
+  physical_localization_claim: forbidden
+randomization:
+  models: disposable in-memory copies, never cached inference model
+  cumulative_order: [classifier.4, classifier.1, blocks.2, blocks.1, blocks.0, stem]
+  include_shortcuts: true
+  seeds: [3000, 3001, 3002, 3003, 3004]
+  weights: original Conv/Linear initialization; included BatchNorm affine scale=1 and bias=0
+  batchnorm_buffers: preserve frozen running_mean, running_var, num_batches_tracked at every stage
+  mode: evaluation
+  save_randomized_weights: false
+  target: fixed original predicted class
+  metrics: [top_10_percent_Jaccard, Spearman_average_tie_ranks, spatial_total_variation]
+  spatial_tv: 0.5 * sum(abs(U/sum(U) - V/sum(V)))
+  controls: [unchanged_model_copy, repeated_frozen_CAM, brightness_map, random_map]
+  monotonic_similarity_decrease_required: false
+statistics:
+  unit: image; candidate source groups currently singleton, not verified physical independence
+  repeated_measurements: seeds, pixels and transformations are not independent samples
+  summaries: [mean, median, IQR, valid_count, failure_count, ground_truth_class, correctness, sample_weighted_overall, equal_class_macro]
+  within_image_averaging: random deletion seeds, noise seeds per level, randomization seeds per stage
+  bootstrap: {replicates: 10000, seed: 42, method: class-stratified paired image percentile, interval_percentiles: [2.5, 97.5]}
+  bootstrap_pairing: retain all within-image measurements; resample metric-specific complete cases; disclose exclusions
+  permutation: {replicates: 10000, seed: 43, method: two-sided paired image sign-flip, statistic: equal-class macro mean, p_value: plus-one Monte Carlo}
+  inferential_family: [CAM_minus_random_probability_AOPC30, CAM_minus_brightness_probability_AOPC30]
+  correction: {method: Holm, familywise_alpha: 0.05, hypotheses: 2}
+  other_analyses: descriptive; no pointwise significance testing; curve intervals pointwise, not simultaneous
+  missing_subgroups: no inferential result if either class absent or fewer than two independent observations
+  future_verified_source_duplicates: protocol amendment before source-cluster analysis; never regenerate splits
+failures:
+  original_degenerate: retain manifest; attribution-dependent metrics unavailable, never random substitute
+  transformed_degenerate: Jaccard unavailable; count transition; both degenerate is not Jaccard 1
+  empty_or_full_emission_mask: unavailable alignment with reason
+  class_flip: retain original target and report separate strata
+  perturbed_ood: retain classifier curve; frozen OOD diagnostic only; public gate unchanged
+  nonfinite: affected metric unavailable and failure recorded
+  missing_deletion_step: entire affected AOPC unavailable, never average remaining steps
+  inadequate_support: unavailable below 0.80
+  unexpected_data_error: stop, never substitute sample
+  provenance_or_state_mismatch: abort and invalidate run
+  reporting: metric-specific denominators for all 119; no zero imputation; no favorable-case removal
+limitations:
+  - deletion creates distribution shift; no ROAR/retraining claim
+  - native CAM is coarse and precedes residual addition; interpolation adds no evidence
+  - positive-only CAM omits negative evidence; softmax saturation and logit shifts matter
+  - ties, padding, clipping, interpolation and mask thresholds affect results
+  - image brightness is not calibrated flux; emission proxies are not expert annotations
+  - source identity and cross-source independence remain unverified
+  - validation has informed model development and four examples were inspected
+  - small misclassified groups limit inference; no survey or retraining uncertainty
+  - randomization conditions on preserved learned BatchNorm buffers, not a fully fresh network
+  - no metric proves causality, faithfulness in general, or astronomical correctness
+outputs:
+  future_root: outputs/xai/phase3b_v1.0.0
+  no_overwrite: true
+  manifests: canonical UTF-8 JSON, sorted keys, compact separators, one terminal newline; immutable bytes
+  manifest_generation_writes: false
+  future_test_reporting: separate authorization and protocol; existing final metrics unchanged
