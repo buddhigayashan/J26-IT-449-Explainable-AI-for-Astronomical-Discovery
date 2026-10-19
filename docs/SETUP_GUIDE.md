@@ -24,7 +24,7 @@ Do **not** clone into an existing folder containing unsaved work. Do **not** use
    - J.A.B.G. Jayawickrama → `buddhi`
 5. Repository → Open in Visual Studio Code.
 
-**Important:** The initial clone checks out `main`. The new team scaffolding is currently on `developer` and the other three member branches. Buddhi's `buddhi` branch was created from his existing research feature branch and has not yet received the shared scaffold. Buddhi must not overwrite or discard his local uncommitted work to change branches.
+**Important:** The initial clone checks out `main`, which intentionally remains the stable research baseline. Shared onboarding files live on `developer` and are propagated to member branches. Buddhi's `buddhi` branch also preserves his previously pushed AGN-XAI research commits; it is not interchangeable with `developer`. Buddhi must not overwrite or discard his local uncommitted work to change branches.
 
 ## 3. Windows: one-command team environment
 
