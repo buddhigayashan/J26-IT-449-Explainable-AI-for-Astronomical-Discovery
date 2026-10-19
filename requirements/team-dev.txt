@@ -1,0 +1,4 @@
+# Lightweight, shared tooling for all four team members (Python 3.12).
+# Does NOT install the AGN-XAI ML stack, download datasets, or run models.
+pytest>=8,<10
+PyYAML>=6,<7
