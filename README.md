@@ -4,6 +4,29 @@
 
 This repository is the **shared workspace for a four-member astronomy research project**, not the repository for any one member's component alone.
 
+## Repository structure (proposed migration)
+
+This layout is being reviewed in a **draft pull request**. Until that PR is merged, the default `main` branch still contains the historical Component 4 root files.
+
+```text
+components/
+  01-edirisooriya-stellar-spectra/       # Component 1 — P.K. Edirisooriya
+  02-rajapaksha-galaxy-morphology/      # Component 2 — D.O. Rajapaksha
+  03-sewwandi-exoplanet-detection/      # Component 3 — K.H.S.D. Sewwandi
+  04-buddhi-radio-galaxies/            # Component 4 — J.A.B.G. Jayawickrama
+    config.yaml
+    requirements.txt
+    src/ scripts/ tests/ demo/ notebooks/ outputs/ report_assets/ docs/
+docs/                                     # Group documentation (not component-specific)
+integration/                              # Future reviewed integration
+README.md                                 # Group overview
+.gitignore                                # Repository-wide exclusions
+```
+
+The first three component directories currently contain **documentation placeholders only**, not their members' implementations. The Component 4 files are proposed as an **unchanged file-content relocation** from the historical `main` root; this does **not** import newer, divergent work from the `buddhi` branch. Work on the member branches should continue independently until reviewed. Do not assume a combined application or validated group-level results.
+
+For Component 4, run project-relative commands **from inside** `components/04-buddhi-radio-galaxies/` (for example, `python -m pytest tests`) after installing its dependencies. Runtime tests and any CI workflows still need to be checked before merging this migration.
+
 ## Research overview
 
 The project investigates explainable and uncertainty-aware artificial intelligence in four astronomical domains. Each member develops and evaluates a **separate research component**. The group aims to compare model performance, explanation quality, and scientific interpretability across the domains, subject to compatible methods and independently verified evidence.
@@ -56,9 +79,9 @@ The topics and team allocation follow the group's research presentation. Branch 
 
 ## Important note about existing repository contents
 
-This repository was initially set up around **Component 4 (AGN radio-source classification)**. Some existing root-level directories, scripts, configurations, figures, and historical README content therefore describe Buddhi's work, **not a completed unified four-component application**.
+This repository was initially set up around **Component 4 (AGN radio-source classification)**. On the current `main` branch, root-level directories, scripts, configurations, figures, and historical README content describe Buddhi's work. This migration proposes moving those historical files to `components/04-buddhi-radio-galaxies/`, **not creating a completed unified four-component application**.
 
-Do **not** assume that root-level `config.yaml`, `requirements.txt`, `src/`, `scripts/`, `demo/`, `outputs/`, or `docs/` apply to all four components. The other members should maintain their own instructions and artifacts until an agreed integration structure is reviewed.
+Do **not** assume that the Component 4 `config.yaml`, `requirements.txt`, `src/`, `scripts/`, `demo/`, `outputs/`, or `docs/` apply to all four components. The other members should maintain their own instructions and artifacts until an agreed integration structure is reviewed.
 
 This group README intentionally does not reproduce Component 4's dataset statistics, training commands, checkpoints, or validation scores as group-wide results. For Component 4 details, consult its member branch and scientific reports.
 
