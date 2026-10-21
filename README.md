@@ -1,118 +1,77 @@
-# J26-IT-449 - AGN-Aware Radio Source Structure Classification
+# Explainable AI for Astronomical Discovery
 
-Final-year research project: **Explainable AI for Astronomical Discovery using XAI and Uncertainty Quantification**.
+**SLIIT Faculty of Computing | Final-Year Research Project | J26-IT-449 (2026)**
 
-Individual component: **AGN-Aware Radio Source Structure Classification using CNN + XAI**.
+This repository is the **shared workspace for a four-member astronomy research project**, not the repository for any one member's component alone.
 
-Student: J.A.B.G. Jayawickrama  
-Student ID: IT23308602
+## Research overview
 
-## Environment
+The project investigates explainable and uncertainty-aware artificial intelligence in four astronomical domains. Each member develops and evaluates a **separate research component**. The group aims to compare model performance, explanation quality, and scientific interpretability across the domains, subject to compatible methods and independently verified evidence.
 
-- Python 3.12
-- PyTorch
+**High-level workflow:** astronomical datasets → domain-specific preprocessing and models → explainability / uncertainty analysis → domain-informed scientific evaluation → group comparison and reporting.
 
-## Project Structure
+## Research components and team
 
-- `data/`: Dataset storage and generated splits. Raw data is intentionally not included.
-- `notebooks/`: Exploratory analysis, modelling, evaluation, and XAI workflow notebooks.
-- `src/`: Reusable data, model, XAI, and utility modules.
-- `scripts/`: Command-line entry points for the research pipeline.
-- `outputs/`: Generated models, metrics, figures, and XAI artefacts.
-- `report_assets/`: Figures and tables prepared for the final report.
-- `tests/`: Automated tests for the project components.
+| Component | Research topic | Researcher | Student ID | Working branch |
+| --- | --- | --- | --- | --- |
+| 1 | **SHAP-Driven Feature Discovery in Stellar Spectra** | P.K. Edirisooriya | IT23330696 | [`edirisooriya`](../../tree/edirisooriya) |
+| 2 | **XAI Audit of Galaxy Morphology Classifiers** | D.O. Rajapaksha | IT23276932 | [`rajapaksha`](../../tree/rajapaksha) |
+| 3 | **Bayesian Uncertainty Quantification for Exoplanet Detection** | K.H.S.D. Sewwandi | IT23228726 | [`sewwandi`](../../tree/sewwandi) |
+| 4 | **AGN-Aware Radio Source Structure Classification Using CNN + XAI** | J.A.B.G. Jayawickrama | IT23308602 | [`buddhi`](../../tree/buddhi) |
 
-## Dataset
+The topics and team allocation follow the group's research presentation. Branch labels are existing GitHub branches; **a branch's existence does not establish that its component is complete or merged**.
 
-Phase 1 uses the **MiraBest Zenodo v1 basic binary dataset** from the official [Zenodo record 10.5281/zenodo.4288837](https://zenodo.org/records/4288837). The checksum-verified local archive contains 704 training samples and 88 test samples, for 792 total images:
+### Component scope
 
-- label `0`: FR-I
-- label `1`: FR-II
-- FR-I samples: 351
-- FR-II samples: 441
+- **Component 1 — Stellar spectra:** SDSS/APOGEE spectra, model predictions, SHAP/TreeSHAP wavelength attribution, and astrophysical spectral-line interpretation.
+- **Component 2 — Galaxy morphology:** Galaxy10/DECaLS and Galaxy Zoo context; CNN explanations and audits of faithfulness, stability, and alignment with morphology.
+- **Component 3 — Exoplanets:** Kepler/TESS light curves, detection models, Bayesian/Monte Carlo Dropout uncertainty, and calibration evaluation.
+- **Component 4 — Radio galaxies (RadioMorph AI):** MiraBest/Radio Galaxy Zoo context, FR-I/FR-II CNN classification, Grad-CAM, faithfulness/stability analysis, and AGN core/jet/lobe interpretation.
 
-This Zenodo v1 archive is already a two-class FRI/FRII dataset. The Zenodo metadata page describes a 1256-image dataset, but direct auditing of the checksum-verified downloadable archive found only 792 raw images. This documented metadata/payload discrepancy is preserved rather than hidden. All experimental results in this implementation use the actually verified 792-image payload.
+**RadioMorph AI is Component 4 only; it is not the name of the full group research project.**
 
-This payload must not be confused with the later full MiraBest fine-label archive and its separate `MBFRConfident` definition of 833 confident samples. The later definition is not used here.
+## Branch and integration policy
 
-The official archive is expected at `data/raw/mirabest/batches.tar.gz` and is verified with MD5 `fa9d6ad8fdde95b0a19df11433e8bca3`. The loader preserves this archive and extracts the `batches/` directory only when it is not already present. Inspect and validate it with:
+| Branch | Intended role |
+| --- | --- |
+| [`main`](../../tree/main) | Shared project entry point and approved integration target |
+| [`developer`](../../tree/developer) | Shared development / integration coordination |
+| [`edirisooriya`](../../tree/edirisooriya) | Component 1 work |
+| [`rajapaksha`](../../tree/rajapaksha) | Component 2 work |
+| [`sewwandi`](../../tree/sewwandi) | Component 3 work |
+| [`buddhi`](../../tree/buddhi) | Component 4 work |
+| [`feature/external-radio-input`](../../tree/feature/external-radio-input) | Existing Component 4 feature work |
+| [`feature/authentication`](../../tree/feature/authentication) | Existing feature branch; ownership/scope to be confirmed |
 
-```text
-python scripts/download_data.py
-```
+**Integration status:** The existence of branches or files must not be treated as evidence of a completed group integration. No member's results should be presented as independently verified until that member's evidence has been reviewed.
 
-The command writes actual validation statistics to `outputs/metrics/dataset_validation.json` and `outputs/metrics/class_distribution.csv`, and saves a real sample grid to `outputs/figures/mirabest_sample_grid.png`. It does not train a model or preprocess/augment images.
+### Collaboration workflow
 
-## Phase 2: Preprocessing and Splitting
+1. Work on your **own assigned branch**, not directly on `main`.
+2. Keep component-specific source code, datasets, experiments, metrics, and documentation clearly identified.
+3. Document environment requirements and reproducible commands **within your component branch or component documentation**.
+4. Do not commit private credentials, raw restricted datasets, oversized model artifacts, or outputs without checking the repository's data and licensing policies.
+5. When ready, open a pull request to the agreed integration branch. Review ownership, scientific evidence, compatibility, and conflicts **before** merging.
+6. Only update group-level claims, benchmark tables, and shared conclusions after verifying the corresponding member contributions.
 
-Create normalized float tensors and reproducible stratified splits with:
+## Important note about existing repository contents
 
-```text
-python -m src.data.split_dataset --config config.yaml
-```
+This repository was initially set up around **Component 4 (AGN radio-source classification)**. Some existing root-level directories, scripts, configurations, figures, and historical README content therefore describe Buddhi's work, **not a completed unified four-component application**.
 
-The current seed-42 split contains 554 training samples, 119 validation samples, and 119 test samples. Split indices and summaries are saved under `data/splits/`; the class-distribution figure is saved to `outputs/figures/split_class_distribution.png`. Images remain `150x150`, validation/test transforms are deterministic, and conservative rotations/flips are applied only through the training view. No CNN training is performed in Phase 2.
+Do **not** assume that root-level `config.yaml`, `requirements.txt`, `src/`, `scripts/`, `demo/`, `outputs/`, or `docs/` apply to all four components. The other members should maintain their own instructions and artifacts until an agreed integration structure is reviewed.
 
-## Usage
+This group README intentionally does not reproduce Component 4's dataset statistics, training commands, checkpoints, or validation scores as group-wide results. For Component 4 details, consult its member branch and scientific reports.
 
-Create or activate a Python 3.12 environment, then install the pinned project dependencies with:
+## Project status
 
-```text
-pip install -r requirements.txt
-```
+**Active multi-component research; group integration and combined evaluation are not yet confirmed.**
 
-Further model architectures will be considered only after the baseline evaluation is complete.
+This README describes the project's intended structure and collaboration policy. It does not claim that all components, a shared benchmark, a unified dashboard, or public deployment are finished.
 
-## Phase 3: Baseline CNN
+## Academic and data-use notes
 
-Start Model 1 baseline training with:
+Dataset licenses, redistribution terms, acknowledgements, and permissions must be checked separately for each component. Publication and deployment require the relevant approvals. Preserve experimental provenance and do not modify frozen scientific artifacts merely to simplify integration.
 
-```text
-python scripts/train_model.py --config config.yaml
-```
+---
 
-The pipeline uses the existing seed-42 train/validation split, CrossEntropyLoss, Adam, train-only augmentation, and early stopping on validation loss. It saves only the best checkpoint to `outputs/models/baseline_cnn_best.pth`, along with training history, curves, and validation metrics under `outputs/metrics/` and `outputs/figures/`. The test split is intentionally not evaluated in Phase 3.
-
-Model 2 is a moderately stronger CNN with three convolutional blocks using channels `32 -> 64 -> 128`, BatchNorm, ReLU, conservative max pooling, dropout, and a retained `4x4` spatial representation before classification. It remains CPU-compatible and does not use ResNet or Grad-CAM.
-
-Start Model 2 training with:
-
-```text
-python scripts/train_model.py --model improved --config config.yaml
-```
-
-Model 2 writes only to its separate artifacts: `outputs/models/improved_cnn_best.pth`, `outputs/metrics/improved_training_history.csv`, `outputs/metrics/improved_validation_metrics.json`, and `outputs/figures/improved_training_curves.png`. The test split is not evaluated.
-
-Model 3 is a lightweight ResNet-style CNN with three residual blocks, BatchNorm, ReLU, projection skip connections where channel dimensions change, and a retained `2x2` spatial representation. It has 339,746 trainable parameters and uses CPU-compatible Adam settings with learning rate `0.0003`, weight decay `0.0001`, and `ReduceLROnPlateau` scheduling.
-
-Start Model 3 training with:
-
-```text
-python scripts/train_model.py --model resnet --config config.yaml
-```
-
-Model 3 writes only to `outputs/models/resnet_cnn_best.pth`, `outputs/metrics/resnet_training_history.csv`, `outputs/metrics/resnet_validation_metrics.json`, and `outputs/figures/resnet_training_curves.png`. The test split remains unevaluated.
-
-## ResNet Reproducibility
-
-Run the optional five-seed validation-stability experiment with the same saved split and ResNet hyperparameters:
-
-```text
-python scripts/run_multiseed_resnet.py --config config.yaml
-```
-
-The seeds are `42`, `7`, `99`, `123`, and `2026`. This experiment evaluates validation data only and writes isolated checkpoints under `outputs/models/reproducibility/`.
-
-## Viva Demo
-
-The local Gradio prototype uses only the selected ResNet checkpoint and does not retrain the model. If Gradio is not installed, run:
-
-```text
-pip install gradio
-```
-
-Launch the demo with:
-
-```text
-python demo/app.py
-```
+*J26-IT-449 — Explainable AI for Astronomical Discovery | SLIIT Faculty of Computing*
